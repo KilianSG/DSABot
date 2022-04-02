@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="Encoding" defaultCharsetForPropertiesFiles="UTF-8">
+    <file url="file://$PROJECT_DIR$" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/Databases/Fertigkeiten.yaml" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/Databases/Nachteile.yaml" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/Databases/Sonderfertigkeiten.yaml" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/Databases/Vorteile.yaml" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/character/create_character.py" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/main.py" charset="UTF-8" />
+    <file url="PROJECT" charset="UTF-8" />
+  </component>
+</project>
