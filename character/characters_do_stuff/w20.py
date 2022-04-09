@@ -14,7 +14,7 @@ def rolling(message):
     while message.content[0:counter].isnumeric():
         counter += 1
     if message.content[counter - 1] == 'w':
-        eins = message.content[:counter - 1]
+        eins = int(message.content[:counter - 1])
         if message.content[counter:].isnumeric():
             numberarray = roll(message, eins, int(message.content[counter:]))
             return numberarray

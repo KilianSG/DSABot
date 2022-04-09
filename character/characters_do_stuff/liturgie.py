@@ -1,9 +1,10 @@
-import random
 import json
+import random
+
 import discord.ext
 
 from character.characters_do_stuff.talent import get_nickname
-from project_buttons.buttons_template import liturgie_template
+from project_buttons.buttons_template import LiturgyTemplate
 
 dict_for_attributes = {'KL': ['Klugheit', 'modKL'],
                        'IN': ['Intuition', 'modIN'],
@@ -15,7 +16,7 @@ dict_for_attributes = {'KL': ['Klugheit', 'modKL'],
                        'KK': ['Körperkraft', 'modKK']}
 
 
-class modification_table:
+class ModificationTable:
     kap = 0
     reach = 0
     casttime = 0
@@ -35,18 +36,18 @@ class modification_table:
             self.tiers_seperated = liturgy_to_cast['KaP-Kosten'].split(',')
 
 
-def prep_liturgy(message, get_nickname, character, zahl=0, target=None):
+def prep_liturgy(message, nickname, character, zahl=0, target=None):
     liturgy_to_cast = what_liturgy(message, zahl, target)
-    max_modificator = int(character['Liturgien'][liturgy_to_cast]['fw'] / 4)  # TODO modifizierung zu 0 oder +1
-    table = modification_table(character['Liturgien'][liturgy_to_cast])
-    components = liturgie_template(get_nickname, table)
-    return_embed = get_basic_liturgy_embed(get_nickname, character, character['Liturgien'][liturgy_to_cast],
-                                           [liturgy_to_cast][0])
-    return [return_embed[0], components, max_modificator, character['Liturgien'][liturgy_to_cast], liturgy_to_cast,
-            return_embed[1]]
+    table = ModificationTable(character['Liturgien'][liturgy_to_cast])
+    basic_embed = get_basic_liturgy_embed(nickname, character, character['Liturgien'][liturgy_to_cast], liturgy_to_cast)
+    view = LiturgyTemplate(nickname, table, character, character['Liturgien'][liturgy_to_cast], liturgy_to_cast,
+                           basic_embed[0], basic_embed[1])
+    return [basic_embed[0], view]
 
 
-def get_basic_liturgy_embed(name_to_find, character, liturgy_to_cast, liturgy_name, list_of_attributes=[0, 0, 0]):
+def get_basic_liturgy_embed(name_to_find, character, liturgy_to_cast, liturgy_name, list_of_attributes=None):
+    if list_of_attributes is None:
+        list_of_attributes = [0, 0, 0]
     proben = liturgy_to_cast['Probe']
     proben = proben.split('/')
     proben_reihnform = [proben[0].strip(), proben[1].strip(), proben[2].split()[0]]
@@ -104,14 +105,7 @@ def what_liturgy(message, zahl=0, target=None):
         if db['Meister'].get(zahl):
             character = db['Meister'].get(zahl)
             name_to_find = str(zahl)
-        else:
-            embedVar = discord.Embed(title=name_to_find, description="konnte nicht gefunden werden", color=0x3498DB)
-            return embedVar
-    elif not db[dbname].get(name_to_find):
-        embedVar = discord.Embed(title=name_to_find, description="konnte nicht gefunden werden", color=0x3498DB)
-        return embedVar
-    else:
-        character = db[dbname].get(name_to_find)
+    character = db[dbname].get(name_to_find)
     words = message.content.split()
     liturgy_to_cast = None
     for key in character['Liturgien'].keys():

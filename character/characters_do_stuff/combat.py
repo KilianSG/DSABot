@@ -1,22 +1,13 @@
-import random
 import json
+import random
+
 import discord
-from Databases.lists.list import liste_für_pre_combat, list_für_combat
+
+from Databases.lists.list import dict_of_combattalents, list_for_pre_combat, \
+    list_for_pre_combat_special_ability, list_for_pre_combat_basic_ability, list_for_combat_special, \
+    list_for_combat_basic
 from character.characters_do_stuff.talent import get_nickname
-from project_buttons.buttons_template import pre_combat, wait_button, back_and_start, back_and_start_and_wait, turn_end
-
-
-def embed_end_of_turn():
-    embedVar = discord.Embed(title='Zug Ende', description="Verzögerte Züge nun ausführen....", color=0x3498DB)
-    button = turn_end()
-    return embedVar, button
-
-
-def embed_wait_for_later(name, character):
-    embedVar = discord.Embed(title=name, description="Wartet auf später...", color=0x3498DB)
-    embedVar.set_thumbnail(url=str(character['Picture']))
-    button = wait_button()
-    return embedVar, button
+from project_buttons.buttons_template import CombatView
 
 
 def embed_in_combat(name, alive, character):
@@ -25,7 +16,7 @@ def embed_in_combat(name, alive, character):
         for y in character['Sonderfertigkeiten'][x]:
             if y[-1].isdigit():
                 number = int(y[-1])
-                for counting_down in range(1, number+1):
+                for counting_down in range(1, number + 1):
                     add_this = (y[:-1] + str(counting_down),)
                     sonderfertigkeit += add_this
                 add_this = (y[:-2],)
@@ -50,16 +41,16 @@ def embed_in_combat(name, alive, character):
         embedVar = discord.Embed(title=name, description="Dein Zug ist dran!", color=0x3498DB)
         embedVar.set_thumbnail(url=str(character['Picture']))
 
-    components = pre_combat(list_of_possibilities, list_of_predictions, name)
-    components.append(back_and_start_and_wait())
+    new_view = CombatView(list_of_possibilities, list_of_predictions, name, character)
+
     print(list_of_predictions)
-    return embedVar, components
+    return new_view
 
 
 def create_embed_out_of_list(name, liste, character):
     get_dat = ''
     for x in liste:
-        get_dat += '\n'+x
+        get_dat += '\n' + x
     embedVar = discord.Embed(title=name, description="", color=0x3498DB)
     embedVar.set_thumbnail(url=str(character['Picture']))
     embedVar.add_field(name='Ausgewählte Sonderfertigkeiten', value=get_dat)
@@ -81,26 +72,9 @@ def embed_pre_combat(name, alive, character):
                     if y.startswith(sonderfertigkeit) or x.startswith('Improvisi'):
                         list_of_predictions.append((x, y))
             list_of_possibilities.append(x)
-    if not alive and not name.isdigit():
-        print('todo')
-    else:
-        embedVar = discord.Embed(title=name, description="Kampfrundenbeginn", color=0x3498DB)
-        embedVar.set_thumbnail(url=str(character['Picture']))
-    components = pre_combat(list_of_possibilities, list_of_predictions, name)
-    components.append(back_and_start())
-    return embedVar, components, list_of_predictions
+    view = CombatView(list_of_possibilities, list_of_predictions, name, character)
 
-
-def embed_turn_table(liste, counter):
-    namen = ''
-    for x in range(len(liste)):
-        if x == counter:
-            namen += '__' + liste[x][3] + '__\n'
-        else:
-            namen += liste[x][3] + '\n'
-    embedVar = discord.Embed(title='Kampfrunden', description=namen, color=0x3498DB)
-
-    return embedVar
+    return view
 
 
 zone = ""

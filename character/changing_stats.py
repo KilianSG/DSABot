@@ -1,7 +1,8 @@
-import discord
-import discord.ext
 import json
 from math import ceil
+
+import discord
+import discord.ext
 
 from character.characters_do_stuff.talent import get_nickname
 
@@ -38,9 +39,9 @@ def LP_reg_or_dmg(message, sign, number, zone, zahl=0, asp=False, kap=False):
         decider = "asp"
     elif kap == True:
         decider = 'kap'
-    lep_dict = {int(ceil(3/4 * character['LeP'])): 1,
-                int(ceil(2/4 * character['LeP'])): 2,
-                int(ceil(1/4 * character['LeP'])): 3,
+    lep_dict = {int(ceil(3 / 4 * character['LeP'])): 1,
+                int(ceil(2 / 4 * character['LeP'])): 2,
+                int(ceil(1 / 4 * character['LeP'])): 3,
                 5: 4}
 
     if sign == '+':
@@ -65,7 +66,8 @@ def LP_reg_or_dmg(message, sign, number, zone, zahl=0, asp=False, kap=False):
 
     embedVar = discord.Embed(title=name_to_find, description="", color=0x3498DB)
     embedVar.set_thumbnail(url=str(character['Picture']))
-    embedVar.add_field(name=f"{dict_for_lep_kap_asp[decider][2]}", value=(f"{character[dict_for_lep_kap_asp[decider][1]]}/{character[dict_for_lep_kap_asp[decider][0]]}"),inline=False)
+    embedVar.add_field(name=f"{dict_for_lep_kap_asp[decider][2]}", value=(
+        f"{character[dict_for_lep_kap_asp[decider][1]]}/{character[dict_for_lep_kap_asp[decider][0]]}"), inline=False)
     embedVar.set_footer(text=f"Letzte Änderung: {sign}{number}")
     if liegt_im_sterben == 1:
         embedVar.add_field(name="", value=(' liegt im sterben '), inline=False)
@@ -170,32 +172,28 @@ def SP_reg_or_dmg(message, sign, number, zahl=0):
         return embedVar
     else:
         character = db[dbname].get(name_to_find)
-
     if number == '':
         number = 1
     else:
         number = int(number)
-
+    embedVar = discord.Embed(title=name_to_find, description="", color=0x3498DB)
+    embedVar.set_thumbnail(url=str(character['Picture']))
+    embedVar.set_image(
+        url="https://cdn.discordapp.com/attachments/633193750834708501/935852864163696670/jeton_minipng.png")
     if sign == '-':
         if character['actualSchicksalspunkt'] >= number:
             character['actualSchicksalspunkt'] -= number
-            embedVar = discord.Embed(title=name_to_find, description="", color=0x3498DB)
-            embedVar.set_thumbnail(url=str(character['Picture']))
-            embedVar.set_image(
-                url="https://cdn.discordapp.com/attachments/823616400274096148/935244872061968424/jeton.png")
             embedVar.add_field(name="Schicksalspunkte", value=(
-                        str(character['actualSchicksalspunkt']) + '/' + str(character['Schicksalspunkt'])),
+                    str(character['actualSchicksalspunkt']) + '/' + str(character['Schicksalspunkt'])),
                                inline=True)
             db[dbname][name_to_find].update(character)
             with open('jsoned_characters.json', 'w') as f:
                 json.dump(db, f)
                 return embedVar
         else:
-            embedVar = discord.Embed(title=name_to_find, description="", color=0x3498DB)
-            embedVar.set_thumbnail(url=str(character['Picture']))
             embedVar.add_field(name="Zu wenig Schicksalspunkte", value=(
-                        'Du besitzt ' + str(character['actualSchicksalspunkt']) + '/' + str(
-                    character['Schicksalspunkt'])), inline=True)
+                    'Du besitzt ' + str(character['actualSchicksalspunkt']) + '/' + str(
+                character['Schicksalspunkt'])), inline=True)
             db[dbname][name_to_find].update(character)
             with open('jsoned_characters.json', 'w') as f:
                 json.dump(db, f)
@@ -203,10 +201,8 @@ def SP_reg_or_dmg(message, sign, number, zahl=0):
     elif sign == '+':
         if (character['actualSchicksalspunkt'] + number) <= character['Schicksalspunkt']:
             character['actualSchicksalspunkt'] += number
-            embedVar = discord.Embed(title=name_to_find, description="", color=0x3498DB)
-            embedVar.set_thumbnail(url=str(character['Picture']))
             embedVar.add_field(name="Schicksalspunkte", value=(
-                        str(character['actualSchicksalspunkt']) + '/' + str(character['Schicksalspunkt'])),
+                    str(character['actualSchicksalspunkt']) + '/' + str(character['Schicksalspunkt'])),
                                inline=True)
             db[dbname][name_to_find].update(character)
             with open('jsoned_characters.json', 'w') as f:
@@ -214,10 +210,8 @@ def SP_reg_or_dmg(message, sign, number, zahl=0):
             return embedVar
         else:
             character['actualSchicksalspunkt'] = character['Schicksalspunkt']
-            embedVar = discord.Embed(title=name_to_find, description="", color=0x3498DB)
-            embedVar.set_thumbnail(url=str(character['Picture']))
             embedVar.add_field(name="Schicksalspunkte", value=(
-                        str(character['actualSchicksalspunkt']) + '/' + str(character['Schicksalspunkt'])),
+                    str(character['actualSchicksalspunkt']) + '/' + str(character['Schicksalspunkt'])),
                                inline=True)
             db[dbname][name_to_find].update(character)
             with open('jsoned_characters.json', 'w') as f:
@@ -280,7 +274,7 @@ def zustaende_reg_or_dmg(message, sign, number, zustand, zahl):
             embedVar = discord.Embed(title=name_to_find, description="", color=0x3498DB)
             embedVar.set_thumbnail(url=str(character['Picture']))
             embedVar.add_field(name=zustand, value=(
-                        'Du besitzt ' + str(character['Zustaende'][zustand]) + ' vom Zustand ' + zustand),
+                    'Du besitzt ' + str(character['Zustaende'][zustand]) + ' vom Zustand ' + zustand),
                                inline=True)
         db[dbname][name_to_find].update(character)
         with open('jsoned_characters.json', 'w') as f:

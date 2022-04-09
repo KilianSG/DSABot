@@ -5,50 +5,14 @@ import discord
 import discord.ext
 import yaml
 
-from Databases.lists.list import liste_zum_suchen
+from Databases.lists.list import liste_zum_suchen, dict_of_combattalents, list_for_pre_combat, \
+    list_for_pre_combat_special_ability, list_for_pre_combat_basic_ability, list_for_combat_special, \
+    list_for_combat_basic
 from character.characters_do_stuff.talent import get_nickname, fk
+from project_buttons.buttons_template import StatusView
 
 
-# with open("Fertigkeiten.yaml", 'r') as stream:
-#    fk = yaml.safe_load(stream)
-
-class player():
-    hasaction = 0
-    spells = []
-    combat_ability = []
-
-
-class spells():
-    spell_name = ''
-    AsP_costs = 0
-    AsP_modify = 0
-    range = 0
-    range_modify = 0
-    cast_time = 0
-    cast_time_modify = 0
-    difficulty = 0
-    difficulty_zaehigkeit = 0
-    difficulty_seelenkraft = 0
-    eigenschaften = [''] * 3
-
-
-class combat_abilities():
-    abilities_name = ''
-    active = 0
-    passiv = 0
-    basic = 0
-    special = 0
-    tp = 0
-    self_vt = 0
-    self_at = 0
-    enemy_vt = 0
-    enemy_at = 0
-    # 1 == nur ausweichen, 2 == nur parrieren, 3 == nur mit Schild
-    restriction_of_attack = 0
-    type_weapon = [0]
-
-
-class printable_character():
+class PrintableCharacter:
     embed = ''
     embed1 = ''
     embed2 = ''
@@ -72,6 +36,11 @@ dict_of_eigenschaften = {
 
 
 def print_character(character, name_to_find):
+    """
+    :type character character from db
+    :type name_to_find: string
+    :return embed and view
+    """
     Eigenschaften = ''
     for chose_eigenschaft in range(1, 9):
         eigenschaft = dict_of_eigenschaften[chose_eigenschaft]
@@ -103,7 +72,7 @@ def print_character(character, name_to_find):
         if character[name_to_find]['Zustaende'][zustand] != 0:
             Zustaende += f"\n{zustand}\t= {character[name_to_find]['Zustaende'][zustand]}"
 
-    return_this = printable_character()
+    return_this = PrintableCharacter
 
     embedVar = discord.Embed(title=name_to_find, description="", color=0x3498DB)
     embedVar.set_thumbnail(url=str(character[name_to_find]['Picture']))
@@ -117,19 +86,16 @@ def print_character(character, name_to_find):
         embedVar.add_field(name="Zustände", value=Zustaende, inline=False)
 
     Nachteile = ''
-    for x in range(len(character[name_to_find]['Nachteile'])):
-        for y in character[name_to_find]['Nachteile'][x]:
-            Nachteile += f"{y}\n"
+    for x in character[name_to_find]['Nachteile']:
+        Nachteile += f"{x}\n"
 
     Sonderfertigkeiten = ''
-    for x in range(len(character[name_to_find]['Sonderfertigkeiten'])):
-        for y in character[name_to_find]['Sonderfertigkeiten'][x]:
-            Sonderfertigkeiten += f"{y}\n"
+    for x in character[name_to_find]['Sonderfertigkeiten']:
+        Sonderfertigkeiten += f"{x}\n"
 
     Vorteile = ''
-    for x in range(len(character[name_to_find]['Vorteile'])):
-        for y in character[name_to_find]['Vorteile'][x]:
-            Vorteile += f"{y}\n"
+    for x in character[name_to_find]['Vorteile']:
+        Vorteile += f"{y}\n"
 
     embedVar2 = discord.Embed(title=name_to_find, description="", color=0x3498DB)
     embedVar2.set_thumbnail(url=str(character[name_to_find]['Picture']))
@@ -139,16 +105,27 @@ def print_character(character, name_to_find):
     embedVar3 = discord.Embed(title=name_to_find, description="", color=0x3498DB)
     embedVar3.set_thumbnail(url=str(character[name_to_find]['Picture']))
     embedVar3.add_field(name="Sonderfertigkeiten", value=Sonderfertigkeiten, inline=True)
-
     Items = ""
     for x in character[name_to_find]['Items']:
         Items += f'\n {x}'
+    Fernkampfwaffe = ''
+    if character[name_to_find].get('Fernkampf Waffe'):
+        for weapon in character[name_to_find]['Fernkampf Waffe'].keys():
+            Fernkampfwaffe += f'\n{weapon}'
+    Nahkampfwaffen = ''
+    if character[name_to_find].get('Nahkampf Waffen'):
+        for weapon in character[name_to_find]['Nahkampf Waffen'].keys():
+            Nahkampfwaffen += f'\n{weapon}'
     embedVar4 = discord.Embed(title=name_to_find, description="", color=0x3498DB)
     embedVar4.set_thumbnail(url=str(character[name_to_find]['Picture']))
     if character[name_to_find].get('Items'):
-        embedVar4.add_field(name="Gegenstände", value=Items, inline=False)
+        embedVar4.add_field(name="Gegenstände", value=Items, inline=True)
     else:
-        embedVar4.add_field(name="Gegenstände", value='Keine im Inventar', inline=False)
+        embedVar4.add_field(name="Gegenstände", value='Keine im Inventar', inline=True)
+    if character[name_to_find].get('Nahkampf Waffen'):
+        embedVar4.add_field(name="Nahkampfwaffen", value=Nahkampfwaffen, inline=True)
+    if character[name_to_find].get('Fernkampf Waffe'):
+        embedVar4.add_field(name="Fernkampfwaffen", value=Fernkampfwaffe, inline=True)
 
     Zauber = ""
     for x in character[name_to_find]['Zauber']:
@@ -194,6 +171,14 @@ class charactere(object):
         self.blessings = blessings
         self.belongings = belongings
         self.pets = pets
+
+
+def loading_character(message: discord.Message, newchar):
+    char = charactere(**newchar)
+    printable_character = create_char(char, message, "")
+    nickname = get_nickname(message)
+    view = StatusView(get_nickname=nickname, embed=printable_character)
+    return [printable_character.embed, view]
 
 
 def create_char(character, message, string):
@@ -269,8 +254,8 @@ def create_char(character, message, string):
     Kampftalente = [6] * 21
     for x in character.ct:
         if x.startswith("CT_"):
-            if x[3:4].isnumeric() == True:
-                if x[4:5].isnumeric() == True:
+            if x[3:4].isnumeric():
+                if x[4:5].isnumeric():
                     check = int(x[3:5])
                     Kampftalente[check - 1] = character.ct[x]
                 else:
@@ -309,23 +294,26 @@ def create_char(character, message, string):
     Asp = 0
     Karmal = 0
     Schmerz = 0
-    print(int(Konstitution / 2))
     Wundschwelle = int((Konstitution + 1) / 2) + eisernchecker
 
-    sonderfertigkeiten = []
-    nachteile = []
-    vorteile = []
-    zaubererweiterungen = []
-    liturgieerweiterungen = []
+    special_abilities = []
+    disadvantages = []
+    advantages = []
+    spell_extension = []
+    liturgy_extension = []
+    combat_special_abilities_special = []
+    combat_special_abilities_basic = []
+    pre_combat_abilities_basic = []
+    pre_combat_special = []
+    pre_combat_abilities_special = []
     for x in character.activatable:
         if x.startswith('SA_'):
             if character.activatable[x]:
-                sonderfertigkeits_Name = sf[int(x[3:])]['name']
+                special_ability_name = sf[int(x[3:])]['name']
                 if character.activatable[x][0].get('sid'):
                     for y in range(len(character.activatable[x])):
                         value_to_check = character.activatable[x][y]
 
-                        # Fertigkeitsspezialisierung
                         if value_to_check.get('sid') and value_to_check.get('sid2') and not isinstance(
                                 value_to_check['sid'], str):
                             break
@@ -334,30 +322,27 @@ def create_char(character, message, string):
                             add_sid = ' ' + fk[int(value_to_check['sid'][4:]) - 1]['name']
                             add_sid += ' ' + fk[int(value_to_check['sid'][4:]) - 1]['applications'][
                                 value_to_check['sid2'] - 1]['name']
-                            sonderfertigkeits_Name += add_sid
+                            special_ability_name += add_sid
                             continue
 
-                        if sonderfertigkeits_Name == 'Anatomie':
+                        if special_ability_name == 'Anatomie':
                             add_sid = ' ' + value_to_check.get('sid')
-                            sonderfertigkeits_Name += add_sid
+                            special_ability_name += add_sid
                             continue
 
-                        if sonderfertigkeits_Name == 'Eigene Sonderfertigkeit':
+                        if special_ability_name == 'Eigene Sonderfertigkeit':
                             name_of_eigene_Sonderfertigkeit = value_to_check.get('sid').split(', ')
                             for x in name_of_eigene_Sonderfertigkeit:
                                 new_list = [x]
-                                sonderfertigkeiten.append(new_list)
+                                special_abilities.append(new_list)
                             continue
 
                         # debug only
                         if not sf[int(x[3:])].get('selectOptions'):
                             if int(x[3:]) == 414:
-                                zaubererweiterungen.append(character.activatable[x])
+                                spell_extension.append(character.activatable[x])
                             elif int(x[3:]) == 663:
-                                liturgieerweiterungen.append(character.activatable[x])
-                            print(character.activatable[x])
-                            print(sf[int(x[3:])])
-                            print('Error in Sonderfertigkeiten, Creating')
+                                liturgy_extension.append(character.activatable[x])
                             continue
                         if isinstance(value_to_check.get('sid'), int):
                             add_sid = ' ' + str(
@@ -368,10 +353,20 @@ def create_char(character, message, string):
                             add_sid += ' ' + str(value_to_check.get('sid2'))
                         if character.activatable[x][y].get('tier'):
                             add_sid += ' ' + str(character.activatable[x][y].get('tier'))
-                        sonderfertigkeits_Name += add_sid
+                        special_ability_name += add_sid
                 elif character.activatable[x][0].get('tier'):
-                    sonderfertigkeits_Name += ' ' + str(character.activatable[x][0].get('tier'))
-                sonderfertigkeiten.append([sonderfertigkeits_Name])
+                    special_ability_name += ' ' + str(character.activatable[x][0].get('tier'))
+                if special_ability_name in list_for_pre_combat.keys():
+                    pre_combat_special.append(special_ability_name)
+                elif special_ability_name in list_for_pre_combat_special_ability.keys():
+                    pre_combat_abilities_special.append(special_ability_name)
+                elif special_ability_name in list_for_pre_combat_basic_ability.keys():
+                    pre_combat_abilities_basic.append(special_ability_name)
+                elif special_ability_name in list_for_combat_special.keys():
+                    combat_special_abilities_special.append(special_ability_name)
+                elif special_ability_name in list_for_combat_basic.keys():
+                    combat_special_abilities_basic.append(special_ability_name)
+                special_abilities.append(special_ability_name)
 
         if x.startswith('DISADV_'):
             if character.activatable[x]:
@@ -382,7 +377,7 @@ def create_char(character, message, string):
                     for y in range(len(character.activatable[x])):
                         value_to_check = character.activatable[x][y]
 
-                        if (isinstance(value_to_check.get('sid'), int)):
+                        if isinstance(value_to_check.get('sid'), int):
                             add_sid = ' ' + nt[number_to_look_up]['selectOptions'][value_to_check.get('sid') - 1][
                                 'name']
                         else:
@@ -400,9 +395,9 @@ def create_char(character, message, string):
                     for word in liste_zum_suchen:
                         if word.endswith(is_the_word_to_find):
                             disadvantage_Name = "Unfähigkeit " + word[:word.find(' TAL_')]
-                            break;
+                            break
                 # print(disadvantage_Name)
-                nachteile.append([disadvantage_Name])
+                disadvantages.append(disadvantage_Name)
 
         if x.startswith('ADV_'):
             if character.activatable[x]:
@@ -428,8 +423,8 @@ def create_char(character, message, string):
                     for word in liste_zum_suchen:
                         if word.endswith(is_the_word_to_find):
                             advantage_Name = "Begabung " + word[:word.find(' TAL_')]
-                            break;
-                vorteile.append([advantage_Name])
+                            break
+                advantages.append(advantage_Name)
 
         if x == "ADV_25":  # hohe Lebenskraft
             print(character.activatable[x])
@@ -444,8 +439,8 @@ def create_char(character, message, string):
             except:
                 pass
         if x == 'ADV_49':
-            Schmerz = -1
-            Schmerz_min = -1
+            Schmerz -= -1
+            Schmerz_min -= -1
 
         if x == "SA_680":  # Gildenmagier
             Asp = Klugheit + 20
@@ -510,25 +505,39 @@ def create_char(character, message, string):
     actualSchicksalspunkt = Schicksalspunkt
     Geld = [0, 0, 0, 0]
     Items = []
-    Weapons = {}
-    for x in character.belongings.get('items'):
-        """if character.belongings.get('items').get(x).get('combatTechnique'):
-            new_weapon = {character.belongings.get('items').get(x).get('name'): {
-                'at_mod': character.belongings.get('items').get(x).get('at'),
-                'pa_mod': character.belongings.get('items').get(x).get('pa'),
-                'range': character.belongings.get('items').get(x).get('reach'),
-                'combatTechnique': dict_of_combattalents[character.belongings.get('items').get(x).get('combatTechnique')][0],
-                'damageDiceSides': character.belongings.get('items').get(x).get('damageDiceSides'),
-                'damageDiceNumber': character.belongings.get('items').get(x).get('damageDiceNumber'),
-                'damageFlat': character.belongings.get('items').get(x).get('damageFlat'),
-                'threshold': character.belongings.get('items').get(x).get('primaryThreshold').get('threshold')}}
-            Weapons.update(new_weapon)"""
-        Items.append(character.belongings.get('items').get(x).get('name'))
+    meele_weapons = {}
+    ranged_weapons = {}
+    for item in character.belongings.get('items'):
+        if character.belongings.get('items').get(item).get('combatTechnique'):
+            if character.belongings.get('items').get(item).get('primaryThreshold'):
+                new_weapon = {character.belongings.get('items').get(item).get('name'): {
+                    'at_mod': character.belongings.get('items').get(item).get('at'),
+                    'pa_mod': character.belongings.get('items').get(item).get('pa'),
+                    'range': character.belongings.get('items').get(item).get('reach'),
+                    'combatTechnique':
+                        dict_of_combattalents[character.belongings.get('items').get(item).get('combatTechnique')][0],
+                    'damageDiceSides': character.belongings.get('items').get(item).get('damageDiceSides'),
+                    'damageDiceNumber': character.belongings.get('items').get(item).get('damageDiceNumber'),
+                    'damageFlat': character.belongings.get('items').get(item).get('damageFlat'),
+                    'threshold': character.belongings.get('items').get(item).get('primaryThreshold').get('threshold')}}
+                meele_weapons.update(new_weapon)
+            else:
+                print(character.belongings.get('items').get(item))
+                new_weapon = {character.belongings.get('items').get(item).get('name'): {
+                    'at_mod': character.belongings.get('items').get(item).get('at'),
+                    'range': character.belongings.get('items').get(item).get('reach'),
+                    'combatTechnique':
+                        dict_of_combattalents[character.belongings.get('items').get(item).get('combatTechnique')][0],
+                    'damageDiceSides': character.belongings.get('items').get(item).get('damageDiceSides'),
+                    'damageDiceNumber': character.belongings.get('items').get(item).get('damageDiceNumber'),
+                    'damageFlat': character.belongings.get('items').get(item).get('damageFlat')}}
+                ranged_weapons.update(new_weapon)
+        else:
+            Items.append(character.belongings.get('items').get(item).get('name'))
 
     talente = [0] * 60
     for x in character.talents:
         name_of_talent = int(x[4:])
-        character.talents[x]
         talente[name_of_talent] = character.talents[x]
     Picture = ""
     list_von_Zustaenden = []
@@ -551,7 +560,10 @@ def create_char(character, message, string):
         Furcht = db[dbname].get(name).get('Zustaende').get('Furcht')
         Verwirrung = db[dbname].get(name).get('Zustaende').get('Verwirrung')
         Paralyse = db[dbname].get(name).get('Zustaende').get('Paralyse')
-        list_von_Zustaenden = db[dbname].get(name).get('list_von_Zustaenden')
+        if db[dbname].get(name).get('list_von_Zustaenden'):
+            list_von_Zustaenden = db[dbname].get(name).get('list_von_Zustaenden')
+        else:
+            list_von_Zustaenden = []
 
     Liste_der_Kampftalente = [None] * 21
     eigenschaften = {
@@ -563,18 +575,18 @@ def create_char(character, message, string):
     }
 
     for x in range(1, 21):
-        defense_eigenschaft = int((max(eigenschaften[dict_of_combattalents['CT_' + str(x)][1]],
-                                       eigenschaften[dict_of_combattalents['CT_' + str(x)][2]]) - 8) / 3)
+        defense_attribute = int((max(eigenschaften[dict_of_combattalents['CT_' + str(x)][1]],
+                                     eigenschaften[dict_of_combattalents['CT_' + str(x)][2]]) - 8) / 3)
 
-    offensive_eigenschaft = int((Mut - 8) / 3)
+    offensive_attribute = int((Mut - 8) / 3)
     kampf_talent_name = dict_of_combattalents['CT_' + str(x)][0]
     if not character.ct.get('CT_' + str(x)):
-        Liste_der_Kampftalente[x - 1] = {kampf_talent_name: {'at': 6 + offensive_eigenschaft,
-                                                             'pa': 3 + defense_eigenschaft}}
+        Liste_der_Kampftalente[x - 1] = {kampf_talent_name: {'at': 6 + offensive_attribute,
+                                                             'pa': 3 + defense_attribute}}
     else:
         ktw = character.ct.get('CT_' + str(x))
-        Liste_der_Kampftalente[x - 1] = {kampf_talent_name: {'at': ktw + offensive_eigenschaft,
-                                                             'pa': ceil(ktw / 2) + defense_eigenschaft}}
+        Liste_der_Kampftalente[x - 1] = {kampf_talent_name: {'at': ktw + offensive_attribute,
+                                                             'pa': ceil(ktw / 2) + defense_attribute}}
 
     if get_nickname(message) == 'Meister':
         print('Meistere')
@@ -606,9 +618,16 @@ def create_char(character, message, string):
                                               'Paralyse_min': Paralyse_min, 'Verwirrung': Verwirrung,
                                               'Verwirrung_min': Verwirrung_min, 'Überanstrengung': 0, 'Trance': 0},
                                          'Geld': Geld,
-                                         'Sonderfertigkeiten': sonderfertigkeiten, 'Nachteile': nachteile,
-                                         'Vorteile': vorteile, 'Weapons': Weapons,
+                                         'Sonderfertigkeiten': special_abilities,
+                                         'Kampf Spezialmanöver': combat_special_abilities_special,
+                                         'Kampf Basismanöver': combat_special_abilities_basic,
+                                         'Kampfrunde Basismanöver': pre_combat_abilities_basic,
+                                         'Kampfrunde Spezialmanöver': pre_combat_abilities_special,
+                                         'Kampfrunde': pre_combat_special,
+                                         'Nachteile': disadvantages, 'Vorteile': advantages,
+                                         'Nahkampf Waffen': meele_weapons, 'Fernkampf Waffe': ranged_weapons,
                                          'Items': Items, 'liste_von_Zustaenden': list_von_Zustaenden}})
+            db[dbname] = object_together
         else:
             print('erstes mal')
             db['Meister'] = {name:
@@ -637,10 +656,15 @@ def create_char(character, message, string):
                                        'Paralyse_min': Paralyse_min, 'Verwirrung': Verwirrung,
                                        'Verwirrung_min': Verwirrung_min, 'Überanstrengung': 0, 'Trance': 0},
                                   'Geld': Geld,
-                                  'Sonderfertigkeiten': sonderfertigkeiten, 'Nachteile': nachteile,
-                                  'Vorteile': vorteile, 'Weapons': Weapons,
+                                  'Sonderfertigkeiten': special_abilities,
+                                  'Kampf Spezialmanöver': combat_special_abilities_special,
+                                  'Kampf Basismanöver': combat_special_abilities_basic,
+                                  'Kampfrunde Basismanöver': pre_combat_abilities_basic,
+                                  'Kampfrunde Spezialmanöver': pre_combat_abilities_special,
+                                  'Kampfrunde': pre_combat_special,
+                                  'Nachteile': disadvantages, 'Vorteile': advantages,
+                                  'Nahkampf Waffen': meele_weapons, 'Fernkampf Waffe': ranged_weapons,
                                   'Items': Items, 'liste_von_Zustaenden': list_von_Zustaenden}}
-            db[dbname] = object_together
     elif db.get(dbname):
         object_together = db[dbname]
         object_together.update({name:
@@ -669,8 +693,14 @@ def create_char(character, message, string):
                                           'Paralyse_min': Paralyse_min, 'Verwirrung': Verwirrung,
                                           'Verwirrung_min': Verwirrung_min, 'Überanstrengung': 0, 'Trance': 0},
                                      'Geld': Geld,
-                                     'Sonderfertigkeiten': sonderfertigkeiten, 'Nachteile': nachteile,
-                                     'Vorteile': vorteile, 'Weapons': Weapons,
+                                     'Sonderfertigkeiten': special_abilities,
+                                     'Kampf Spezialmanöver': combat_special_abilities_special,
+                                     'Kampf Basismanöver': combat_special_abilities_basic,
+                                     'Kampfrunde Basismanöver': pre_combat_abilities_basic,
+                                     'Kampfrunde Spezialmanöver': pre_combat_abilities_special,
+                                     'Kampfrunde': pre_combat_special,
+                                     'Nachteile': disadvantages, 'Vorteile': advantages,
+                                     'Nahkampf Waffen': meele_weapons, 'Fernkampf Waffe': ranged_weapons,
                                      'Items': Items, 'liste_von_Zustaenden': list_von_Zustaenden}})
     else:
         db[dbname] = {name:
@@ -699,8 +729,14 @@ def create_char(character, message, string):
                                 'Paralyse_min': Paralyse_min, 'Verwirrung': Verwirrung,
                                 'Verwirrung_min': Verwirrung_min, 'Überanstrengung': 0, 'Trance': 0},
                            'Geld': Geld,
-                           'Sonderfertigkeiten': sonderfertigkeiten, 'Nachteile': nachteile,
-                           'Vorteile': vorteile, 'Weapons': Weapons,
+                           'Sonderfertigkeiten': special_abilities,
+                           'Kampf Spezialmanöver': combat_special_abilities_special,
+                           'Kampf Basismanöver': combat_special_abilities_basic,
+                           'Kampfrunde Basismanöver': pre_combat_abilities_basic,
+                           'Kampfrunde Spezialmanöver': pre_combat_abilities_special,
+                           'Kampfrunde': pre_combat_special,
+                           'Nachteile': disadvantages, 'Vorteile': advantages,
+                           'Nahkampf Waffen': meele_weapons, 'Fernkampf Waffe': ranged_weapons,
                            'Items': Items, 'liste_von_Zustaenden': list_von_Zustaenden}}
 
     if get_nickname(message) == 'Meister':
@@ -753,28 +789,3 @@ def get_liturgy(liturgy):
                 liturgies_from_character[word] = liturgy_list.get(word)
                 liturgies_from_character[word].update({'fw': fw})
     return liturgies_from_character
-
-
-dict_of_combattalents = {
-    'CT_1': ["Armbrüste", 'Fingerfertigkeit', 'nichts'],
-    'CT_2': ["Bögen", 'Fingerfertigkeit', 'nichts'],
-    'CT_3': ["Dolche", 'Gewandtheit', 'nichts'],
-    'CT_4': ["Fechtwaffen", 'Gewandtheit', 'nichts'],
-    'CT_5': ["Hiebwaffen", 'Körperkraft', 'nichts'],
-    'CT_6': ["Kettenwaffen", 'Körperkraft', 'nichts'],
-    'CT_7': ["Lanzen", 'Körperkraft', 'nichts'],
-    'CT_8': ["Peitschen", 'Fingerfertigkeit', 'nichts'],
-    'CT_9': ["Raufen", 'Gewandtheit', 'Körperkraft'],
-    'CT_10': ["Schilde", 'Körperkraft', 'nichts'],
-    'CT_11': ["Schleudern", 'Fingerfertigkeit', 'nichts'],
-    'CT_12': ["Schwerter", 'Gewandtheit', 'Körperkraft'],
-    'CT_13': ["Stangenwaffen", 'Gewandtheit', 'Körperkraft'],
-    'CT_14': ["Wurfwaffen", 'Fingerfertigkeit', 'nichts'],
-    'CT_15': ["Zweihandhiebwaffen", 'Körperkraft', 'nichts'],
-    'CT_16': ["Zweihandschwerter", 'Körperkraft', 'nichts'],
-    'CT_17': ["Feuerspeien", 'Fingerfertigkeit', 'nichts'],
-    'CT_18': ["Blasrohre", 'Fingerfertigkeit', 'nichts'],
-    'CT_19': ["Diskusse", 'Fingerfertigkeit', 'nichts'],
-    'CT_20': ["Fächer", 'Gewandtheit', 'nichts'],
-    'CT_21': ["Spießwaffen", 'Körperkraft', 'nichts']
-}

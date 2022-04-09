@@ -1,50 +1,34 @@
-from discord import ActionRow, Button, ButtonStyle, SelectMenu, SelectOption
+from discord import ButtonStyle, SelectMenu
 
 
-def handle_in_combat(buttonid, character, liste_of_changes, components):
-    print('todo_list of all things with a system to find them fast (key value?)')
+def handle_in_combat_button(buttonid, character, liste_of_changes: list, components):
+    print('handle a button_click')
+    print(components)
     if buttonid in liste_of_changes:
         liste_of_changes.remove(buttonid)
-        for item in components:
-            for action_row in item:
-                if isinstance(action_row, SelectMenu):
-                    for option in action_row.options:
-                        if option.value == buttonid:
-                            print(components)
-                            for delete_this in action_row:
-                                try:
-                                    liste_of_changes.remove(delete_this.value)
-                                except ValueError as e:
-                                    pass
-                            liste_of_changes.append(buttonid)
-                            print(components)
-                            return components
-
-                else:
-                    if action_row.custom_id == buttonid:
-                        action_row.style = ButtonStyle.grey
-                        return components
-
     else:
-        liste_of_changes.append(buttonid)
-        for item in components:
-            for action_row in item:
-                if isinstance(action_row, SelectMenu):
-                    for option in action_row.options:
-                        if option.value == buttonid:
-                            print(components)
-                            for delete_this in action_row:
-                                try:
-                                    liste_of_changes.remove(delete_this.value)
-                                except ValueError as e:
-                                    pass
-                            print(components)
-                            liste_of_changes.append(buttonid)
-                            return components
+        liste_of_changes.append(liste_of_changes)
+    for item in components:
+        for button in item:
+            if isinstance(button, SelectMenu):
+                continue
+            if buttonid == button.custom_id:
+                if button.style == ButtonStyle.red:
+                    button.update(style=ButtonStyle.grey)
                 else:
-                    if action_row.custom_id == buttonid:
-                        action_row.style = ButtonStyle.red
-                        return components
+                    button.update(style=ButtonStyle.red)
+                print(components)
+                return components
+    return components
+
+
+def handle_in_combat(select_id, character, liste_of_changes, components):
+    print('todo_list of all things with a system to find them fast (key value?)')
+    for item in components:
+        for actionRow in item:
+            if isinstance(actionRow, SelectMenu):
+                print(actionRow)
+                return components
     return components
 
 
